@@ -1,4 +1,5 @@
-import { Link, useLoaderData } from "react-router-dom";
+import { Suspense } from "react";
+import { Await, Link, defer, useLoaderData } from "react-router-dom";
 
 export default function Details() {
   const { post, comments } = useLoaderData();
@@ -16,11 +17,15 @@ export default function Details() {
             <p>{post.body}</p>
           </div>
         }
-        <div className="col-12">
-          {comments.map((el) => (
-            <li key={el.id}>{el.body}</li>
-          ))}
-        </div>
+        <Suspense fallback={<p>Loading comments...</p>}>
+          <div className="col-12">
+            <Await resolve={comments}>
+              {(comments) =>
+                comments.map((el) => <li key={el.id}>{el.body}</li>)
+              }
+            </Await>
+          </div>
+        </Suspense>
       </div>
     </div>
   );
@@ -28,9 +33,9 @@ export default function Details() {
 
 export const loadAll = async ({ params }) => {
   const post = await getPost(params.id);
-  const comments = await getComments(params.id);
+  const comments = getComments(params.id);
 
-  return { post, comments };
+  return defer({ post, comments });
 };
 
 export const getPost = async (id) => {
